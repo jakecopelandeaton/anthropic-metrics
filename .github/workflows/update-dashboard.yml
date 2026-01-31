@@ -1,0 +1,50 @@
+name: Update Dashboard
+
+on:
+  schedule:
+      - cron: '0 6 * * *'
+        workflow_dispatch:
+
+        permissions:
+          contents: write
+            pages: write
+              id-token: write
+
+              jobs:
+                update:
+                    runs-on: ubuntu-latest
+                        steps:
+                              - uses: actions/checkout@v4
+                                    - uses: actions/setup-python@v5
+                                            with:
+                                                      python-version: '3.11'
+                                                            - run: pip install -r requirements.txt
+                                                                  - name: Generate dashboard
+                                                                          env:
+                                                                                    GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
+                                                                                              GA4_CREDENTIALS: ${{ secrets.GA4_CREDENTIALS }}
+                                                                                                      run: python generate_dashboard.py
+                                                                                                            - name: Commit changes
+                                                                                                                    run: |
+                                                                                                                              git config user.email "actions@github.com"
+                                                                                                                                        git config user.name "GitHub Actions"
+                                                                                                                                                  git add index.html
+                                                                                                                                                            git diff --staged --quiet || git commit -m "Update dashboard"
+                                                                                                                                                                      git push
+                                                                                                                                                                      
+                                                                                                                                                                        deploy:
+                                                                                                                                                                            needs: update
+                                                                                                                                                                                runs-on: ubuntu-latest
+                                                                                                                                                                                    environment:
+                                                                                                                                                                                          name: github-pages
+                                                                                                                                                                                                url: ${{ steps.deployment.outputs.page_url }}
+                                                                                                                                                                                                    steps:
+                                                                                                                                                                                                          - uses: actions/checkout@v4
+                                                                                                                                                                                                                  with:
+                                                                                                                                                                                                                            ref: main
+                                                                                                                                                                                                                                  - uses: actions/configure-pages@v4
+                                                                                                                                                                                                                                        - uses: actions/upload-pages-artifact@v3
+                                                                                                                                                                                                                                                with:
+                                                                                                                                                                                                                                                          path: '.'
+                                                                                                                                                                                                                                                                - uses: actions/deploy-pages@v4
+                                                                                                                                                                                                                                                                        id: deployment
